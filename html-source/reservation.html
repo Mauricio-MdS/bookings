@@ -10,19 +10,16 @@
       integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
       crossorigin="anonymous"
     />
-    <style>
-      .my-footer {
-        background-color: #163b65;
-        color: white;
-        font-size: 80%;
-        height: 5em;
-        margin-top: 1.5em;
-        padding: 1em;
-      }
-      .room-image {
-        max-width: 50%;
-      }
-    </style>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/css/datepicker-bs5.min.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://unpkg.com/notie/dist/notie.min.css"
+    />
+    <link rel="stylesheet" type="text/css" href="./static/css/styles.css" />
   </head>
   <body>
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
@@ -85,45 +82,50 @@
         <div class="col-md-3"></div>
         <div class="col-md-6">
           <h1 class="text-center mt-4">Search for availability</h1>
-          <form action="/reservation.html" method="post">
+          <form
+            action="/reservation.html"
+            method="post"
+            novalidate
+            class="needs-validation"
+          >
             <div class="row">
               <div class="col">
-                <div class="mb-3">
-                  <label for="start-date" class="form-label"
-                    >Starting Date</label
-                  >
-                  <input
-                    type="date"
-                    class="form-control"
-                    id="start-date"
-                    name="start_date"
-                    aria-describedby="startDateHelp"
-                    required
-                  />
-                  <div id="startDateHelp" class="form-text">
-                    Enter your starting date.
+                <div id="reservationDates" class="row">
+                  <div class="col">
+                    <input
+                      type="text"
+                      name="start"
+                      class="form-control"
+                      required
+                      placeholder="Arrival"
+                    />
                   </div>
-                </div>
-              </div>
-              <div class="col">
-                <div class="mb-3">
-                  <label for="end-date" class="form-label">Ending Date</label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    id="end-date"
-                    name="end_date"
-                    aria-describedby="endDateHelp"
-                    required
-                  />
-                  <div id="endDateHelp" class="form-text">
-                    Enter your ending date.
+                  <div class="col">
+                    <input
+                      type="text"
+                      name="end"
+                      class="form-control"
+                      required
+                      placeholder="Departure"
+                    />
                   </div>
                 </div>
               </div>
             </div>
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <hr />
+            <button type="submit" class="btn btn-primary">
+              Search Availability
+            </button>
           </form>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <p id="myParagraph">This is some text</p>
+          <button id="colorButton" class="btn btn-outline-secondary">
+            Click me
+          </button>
         </div>
       </div>
     </div>
@@ -137,5 +139,151 @@
       integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
       crossorigin="anonymous"
     ></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker-full.min.js"></script>
+    <script src="https://unpkg.com/notie"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+      const attention = prompt()
+      document.getElementById("colorButton").addEventListener("click", () => {
+        const html = `
+        <form id="check-availability-form" action="", method="post" novalidate class="needs-validation">
+          <div class="row">
+            <div class="col">
+              <div class="row" id="reservation-dates-modal">
+                <div class="col">
+                  <input disabled required class="form-control" type="text" name="start" id="start" placeholder="Arrival">
+                </div>
+                <div class="col">
+                  <input disabled required class="form-control" type="text" name="end" id="end" placeholder="Departure">
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+        `
+        attention.custom({ msg: html, title: "Choose your dates" })
+      })
+      ;(function () {
+        "use strict"
+        window.addEventListener(
+          "load",
+          function () {
+            // Fetch all the forms we want to apply custom Bootstrap validation styles to
+            const forms = document.getElementsByClassName("needs-validation")
+            // Loop over them and prevent submission
+            Array.prototype.filter.call(forms, function (form) {
+              form.addEventListener(
+                "submit",
+                function (event) {
+                  if (form.checkValidity() === false) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                  }
+                  form.classList.add("was-validated")
+                },
+                false
+              )
+            })
+          },
+          false
+        )
+      })()
+
+      const elem = document.getElementById("reservationDates")
+      const rangepicker = new DateRangePicker(elem, {
+        format: "yyyy-mm-dd",
+      })
+
+      function notify(msg, msgType) {
+        notie.alert({
+          type: msgType,
+          text: msg,
+        })
+      }
+
+      function notifyModal(title, html, icon, confirmButtonText) {
+        Swal.fire({
+          title,
+          html,
+          icon,
+          confirmationButtonText,
+        })
+      }
+
+      function prompt() {
+        const custom = async (c) => {
+          const { msg = "", title = "" } = c
+
+          const { value: formValues } = await Swal.fire({
+            title: title,
+            html: msg,
+            backdrop: false,
+            focusConfirm: false,
+            showCancelButton: true,
+            willOpen: () => {
+              const elem = document.getElementById("reservation-dates-modal")
+              const rp = new DateRangePicker(elem, {
+                format: "yyyy-mm-dd",
+                showOnFocus: true,
+              })
+            },
+            preConfirm: () => {
+              return [
+                document.getElementById("start").value,
+                document.getElementById("end").value,
+              ]
+            },
+            didOpen: () => {
+              document.getElementById("start").removeAttribute("disabled")
+              document.getElementById("end").removeAttribute("disabled")
+            },
+          })
+          if (formValues) {
+            Swal.fire(JSON.stringify(formValues))
+          }
+        }
+
+        const error = (c) => {
+          const { msg = "", title = "", footer = "" } = c
+          Swal.fire({
+            icon: "error",
+            title: title,
+            text: msg,
+            footer: footer,
+          })
+        }
+
+        const success = (c) => {
+          const { msg = "", title = "", footer = "" } = c
+          Swal.fire({
+            icon: "success",
+            title: title,
+            text: msg,
+            footer: footer,
+          })
+        }
+
+        const toast = (c) => {
+          const { msg = "", icon = "success", position = "top-end" } = c
+
+          const Toast = Swal.mixin({
+            toast: true,
+            title: msg,
+            position: position,
+            icon: icon,
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+              toast.onmouseenter = Swal.stopTimer
+              toast.onmouseleave = Swal.resumeTimer
+            },
+          })
+          Toast.fire({})
+        }
+
+        return { custom, error, success, toast }
+      }
+    </script>
   </body>
 </html>
