@@ -6,13 +6,13 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/justinas/nosurf"
 	"github.com/mauricio-mds/bookings/internal/config"
 	"github.com/mauricio-mds/bookings/internal/models"
 	"github.com/mauricio-mds/bookings/internal/render"
@@ -28,6 +28,12 @@ func getRoutes() http.Handler{
 
 	// change this to true when in production
 	app.InProduction = false
+
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	app.InfoLog = infoLog
+
+	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+	app.ErrorLog = errorLog
 
 	session = scs.New()
 	session.Lifetime = 24 * time.Hour
@@ -103,20 +109,6 @@ func createTestTemplateCache() (map[string]*template.Template, error) {
 		myCache[name] = ts
 	}
 	return myCache, nil
-}
-
-
-// noSurf adds CSRF protection to all POST requests
-func noSurf(next http.Handler) http.Handler {
-	csfrHandler := nosurf.New(next)
-	csfrHandler.SetBaseCookie(http.Cookie{
-		HttpOnly: true,
-		Path: "/",
-		Secure: app.InProduction,
-		SameSite: http.SameSiteLaxMode,
-
-	})
-	return csfrHandler
 }
 
 // sessionLoad loads and saves the session on every request
