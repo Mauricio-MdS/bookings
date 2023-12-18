@@ -9,6 +9,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/mauricio-mds/bookings/internal/config"
+	"github.com/mauricio-mds/bookings/internal/driver"
 	"github.com/mauricio-mds/bookings/internal/handlers"
 	"github.com/mauricio-mds/bookings/internal/helpers"
 	"github.com/mauricio-mds/bookings/internal/models"
@@ -23,10 +24,11 @@ var session *scs.SessionManager
 
 // main creates the server
 func main() {
-	err := run()
+	db, err := run()
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.SQL.Close()
 
 	log.Println("Starting application of port", portNumber)
 
@@ -39,9 +41,12 @@ func main() {
 	log.Fatal(err)
 }
 
-func run() error {
+func run() (*driver.DB, error) {
 	//what I am going to put in the session
 	gob.Register(models.Reservation{})
+	gob.Register(models.User{})
+	gob.Register(models.Room{})
+	gob.Register(models.Restriction{})
 
 	// change this to true when in production
 	app.InProduction = false
@@ -60,18 +65,26 @@ func run() error {
 
 	app.Session = session
 
+	//connect to database
+	log.Println("Connecting to database...")
+	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=JrkT!d6NN6z*pB")
+	if err != nil {
+		log.Fatal("Cannot connect to database!", err)
+	}
+	log.Println("Connected to database.")
+
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	app.TemplateCache = tc
 	app.UseCache = false
 
-	repo := handlers.NewRepo(&app)
+	repo := handlers.NewRepo(&app, db)
 	handlers.NewHandlers(repo)
-	render.NewTemplates(&app)
+	render.NewRenderer(&app)
 	helpers.NewHelpers(&app)
 
-	return nil
+	return db, nil
 }
