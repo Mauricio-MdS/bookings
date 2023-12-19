@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"testing"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
@@ -22,7 +23,7 @@ var app config.AppConfig
 var pathToTemplates = "./../../templates"
 var session *scs.SessionManager
 
-func getRoutes() http.Handler{
+func TestMain(m *testing.M) {
 	//what I am going to put in the session
 	gob.Register(models.Reservation{})
 
@@ -51,32 +52,12 @@ func getRoutes() http.Handler{
 	app.TemplateCache = tc
 	app.UseCache = true
 
-	repo := NewRepo(&app)
+	repo := NewTestRepo(&app)
 	NewHandlers(repo)
 
 	render.NewRenderer(&app)
+	os.Exit(m.Run())
 
-	mux := chi.NewRouter()
-
-	mux.Use(middleware.Recoverer)
-	mux.Use(sessionLoad)
-
-	mux.Get("/", http.HandlerFunc(Repo.Home))
-	mux.Get("/about", http.HandlerFunc(Repo.About))
-	mux.Get("/generals-quarters", http.HandlerFunc(Repo.Generals))
-	mux.Get("/majors-suite", http.HandlerFunc(Repo.Majors))
-	mux.Get("/search-availability", http.HandlerFunc(Repo.Availability))
-	mux.Post("/search-availability", http.HandlerFunc(Repo.PostAvailability))
-	mux.Post("/search-availability-json", http.HandlerFunc(Repo.AvailabilityJSON))
-	mux.Get("/contact", http.HandlerFunc(Repo.Contact))
-	mux.Get("/make-reservation", http.HandlerFunc(Repo.Reservation))
-	mux.Post("/make-reservation", http.HandlerFunc(Repo.PostReservation))
-	mux.Get("/reservation-summary", http.HandlerFunc(Repo.ReservationSummary))
-
-	fileServer := http.FileServer(http.Dir("./static"))
-	mux.Handle("/static/*", http.StripPrefix("/static", fileServer))
-
-	return mux
 }
 
 // createTestTemplateCache creates a template cache as a map
@@ -109,6 +90,31 @@ func createTestTemplateCache() (map[string]*template.Template, error) {
 		myCache[name] = ts
 	}
 	return myCache, nil
+}
+
+func getRoutes() http.Handler{
+
+	mux := chi.NewRouter()
+
+	mux.Use(middleware.Recoverer)
+	mux.Use(sessionLoad)
+
+	mux.Get("/", http.HandlerFunc(Repo.Home))
+	mux.Get("/about", http.HandlerFunc(Repo.About))
+	mux.Get("/generals-quarters", http.HandlerFunc(Repo.Generals))
+	mux.Get("/majors-suite", http.HandlerFunc(Repo.Majors))
+	mux.Get("/search-availability", http.HandlerFunc(Repo.Availability))
+	mux.Post("/search-availability", http.HandlerFunc(Repo.PostAvailability))
+	mux.Post("/search-availability-json", http.HandlerFunc(Repo.AvailabilityJSON))
+	mux.Get("/contact", http.HandlerFunc(Repo.Contact))
+	mux.Get("/make-reservation", http.HandlerFunc(Repo.Reservation))
+	mux.Post("/make-reservation", http.HandlerFunc(Repo.PostReservation))
+	mux.Get("/reservation-summary", http.HandlerFunc(Repo.ReservationSummary))
+
+	fileServer := http.FileServer(http.Dir("./static"))
+	mux.Handle("/static/*", http.StripPrefix("/static", fileServer))
+
+	return mux
 }
 
 // sessionLoad loads and saves the session on every request
